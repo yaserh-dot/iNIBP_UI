@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UART LabViz | Microcontroller Interface</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Premium Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="chart.min.js"></script>
+</head>
+
+<body>
+    <div id="toast" class="toast">
+        <span class="icon">✅</span>
+        <span id="toast-message">Connected Successfully</span>
+    </div>
+
+    <div class="app-container">
+        <!-- Header / Toolbar -->
+        <header class="toolbar">
+            <div class="brand">
+                <div class="brand-icon">⚡</div>
+                <h1>iNIBP</h1>
+            </div>
+
+            <div class="device-controls">
+                <button id="btn-connect" class="btn btn-primary">
+                    <span class="icon">🔌</span> Connect Device
+                </button>
+                <div class="status-indicator disconnected" id="status-light"></div>
+                <span id="connection-status">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- Sidebar Controls -->
+            <aside class="sidebar">
+                <div class="panel">
+                    <h2>Configuration</h2>
+                    <div class="control-group">
+                        <label>Baud Rate</label>
+                        <select id="baud-rate" class="select-premium">
+                            <option value="9600">9600</option>
+                            <option value="19200">19200</option>
+                            <option value="38400">38400</option>
+                            <option value="57600">57600</option>
+                            <option value="115200" selected>115200</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Data Terminators</label>
+                        <select id="line-ending" class="select-premium">
+                            <option value="\n" selected>Newline (\n)</option>
+                            <option value="\r\n">Carriage Return + Newline (\r\n)</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="panel">
+                    <h2>Controls</h2>
+                    <div class="control-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <button id="btn-start" class="btn btn-primary" style="background-color: #10b981;"
+                            title="Start Inflation">
+                            <span class="icon">📈</span>
+                        </button>
+                        <button id="btn-linear" class="btn btn-primary" style="background-color: #f59e0b;"
+                            title="Linear Deflation">
+                            <span class="icon">📉</span>
+                        </button>
+                        <button id="btn-abort" class="btn btn-primary" style="background-color: #ef4444;">
+                            <span class="icon">⏹</span>
+                        </button>
+                    </div>
+
+                    <div class="control-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <button id="btn-log" class="btn btn-secondary" disabled title="Start Logging">
+                            <span class="icon">💾</span>
+                        </button>
+                        <button id="btn-clear-graphs" class="btn btn-secondary">
+                            <span class="icon">🧹</span> Clear Graphs
+                        </button>
+                        <button id="btn-find-max" class="btn btn-secondary">
+                            <span class="icon">🎯</span> Find Max
+                        </button>
+                    </div>
+                    <div class="log-info-container">
+                        <div class="log-row">
+                            <span class="log-label">File:</span>
+                            <span id="log-filename" class="log-value truncate">--</span>
+                        </div>
+                        <div class="log-row">
+                            <span class="log-label">Bytes:</span>
+                            <span id="log-bytes" class="log-value tabular">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Terminal</h2>
+                    <div id="terminal-view" class="terminal-view"></div>
+                    <div class="terminal-controls">
+                        <button id="btn-clear-terminal" class="btn btn-sm">Clear</button>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="autoscroll" checked>
+                            <span class="checkmark"></span>
+                            Auto-scroll
+                        </label>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Visualization Area -->
+            <section class="chart-area">
+                <!-- 1. Digital Readout (Top) -->
+                <div class="readout-container-top" style="display: flex; gap: 12px;">
+                    <div class="readout-card">
+                        <span class="readout-label">Cuff Pressure</span>
+                        <div class="readout-value-group">
+                            <span id="cuff-pressure" class="readout-value">0.00</span>
+                        </div>
+                    </div>
+                    <div class="readout-card">
+                        <span class="readout-label">MAP Pressure</span>
+                        <div class="readout-value-group">
+                            <span id="max-pressure" class="readout-value" style="color: #ef4444;">--</span>
+                        </div>
+                    </div>
+                    <div class="readout-card">
+                        <span class="readout-label">Duration</span>
+                        <div class="readout-value-group">
+                            <span id="duration-value" class="readout-value" style="color: #f59e0b;">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Cuff Chart (Middle - Larger Height) -->
+                <div class="chart-container" id="cuff-chart-container">
+                    <div class="chart-header">Cuff Pressure</div>
+                    <div class="canvas-wrapper">
+                        <canvas id="cuffChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3. Pulse Chart (Bottom - Smaller Height) -->
+                <div class="chart-container" id="pulse-chart-container">
+                    <div class="chart-header">Pulse Pressure</div>
+                    <div class="canvas-wrapper">
+                        <canvas id="pulseChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Scripts -->
+    <script src="serial.js"></script>
+    <script src="logger.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
